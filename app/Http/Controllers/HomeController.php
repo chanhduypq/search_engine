@@ -28,7 +28,6 @@ class HomeController extends Controller
         $toIndex = 10;
         $NUMBER_ROW_PERPAGE=10;
         $count=0;
-        $errorText='';
         
         if ($request->post('page') && ctype_digit($request->post('page'))) {
             $page = $request->post('page');
@@ -57,9 +56,6 @@ class HomeController extends Controller
             if(isset($result->error)){
                   $error=$result->error->errors;
                   $error=$error[0];
-                  $errorText.="message: ".$error->message;
-                  $errorText.= "<br>";
-                  $errorText.= "reason: ".$error->reason;
               }
             
             
@@ -80,7 +76,6 @@ class HomeController extends Controller
                 return view('home', [
                     'result' => null,
                     'search_terms' => $searchTerms ?? '',
-                    'error' => $errorText,
                     'page'=>$page,
                     'count'=>$count,
                     'NUMBER_ROW_PERPAGE'=>$NUMBER_ROW_PERPAGE,
@@ -95,7 +90,6 @@ class HomeController extends Controller
             'params' => $params,
             'page'=>$page,
             'count'=>$count,
-            'error' => $errorText,
             'NUMBER_ROW_PERPAGE'=>$NUMBER_ROW_PERPAGE,
         ]);
     }

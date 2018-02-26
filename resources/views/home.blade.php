@@ -2,9 +2,6 @@
 
 @section('content')
 <style>
-    .pagination.pagination-lg{
-        width: 120%;
-    }
     .pagination.pagination-lg li{
         padding: 5px;
     }
@@ -41,26 +38,16 @@
                     <input type="text" class="  search-query form-control" name="search_terms" value="{{ $search_terms ?? null }}" />
                     <li class="input-group-btn">
                         <button class="btn btn-danger" type="submit">
-                            <li class=" glyphicon glyphicon-search"></li>
+                            <li class="glyphicon glyphicon-search"></li>
                         </button>
                     </li>
                 </div>
             </div>
 
             <?php 
-            if(trim($error)!=''){?>
-                <div class="list-group searched" style="width: 45%;color: red;float: left;margin-right: 10%;">
-                    <h1>Google</h1>
-                      <?php 
-                      echo $error;
-                      ?>
-                </div>
-            <?php 
-            }
-            else{
                 if (isset($result->items) && count($result->items) > 0){?>
-                <div class="list-group searched" style="width: 45%;float: left;margin-right: 10%;">
-                    <h1>Google</h1>
+                <div class="list-group searched" style="width: 100%;">
+                    <h1>Result</h1>
                   <?php foreach ($result->items as $item){?>
                     <div style="color:#555;" class="list-group-item">
                         <h4 class="list-group-item-heading">{{ $item->title }}</h4>
@@ -71,6 +58,7 @@
                   <?php 
                   }
                   if ($count > 0) {?>
+                    <div style="width: 100%;margin: 0 auto;text-align: center;">
                       <ul class="pagination pagination-lg">
                       <?php 
                         $numberPage = ceil($count / $NUMBER_ROW_PERPAGE);
@@ -150,6 +138,7 @@
                                 </li>
 
                       </ul>
+                    </div>
                         <?php
                     }
                     ?>
@@ -157,14 +146,14 @@
             <?php
                 }
                 else{?>
-                 <div class="list-group<?php if($search_terms!='') echo ' searched';?>" style="width: 45%;float: left;margin-right: 10%;">
-                     <h1>Google</h1>
+                 <div class="list-group<?php if($search_terms!='') echo ' searched';?>" style="width: 100%;">
+                     <h1>Result</h1>
                   <?php if ($search_terms!='') echo 'no result';?>  
                 </div>
             
             <?php 
                 }
-            }
+            
             ?>
             
             
