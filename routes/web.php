@@ -13,10 +13,10 @@
 
 $router->get('/', [
 	'as' => 'index.search',
-	'uses' => 'ExampleController@search',
+	'uses' => 'HomeController@search',
 ]);
 
 $router->post('/', [
 	'as' => 'search',
-	'uses' => 'ExampleController@search',
+	'uses' => 'HomeController@search',
 ]);
