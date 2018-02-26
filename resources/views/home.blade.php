@@ -28,12 +28,7 @@
     .list-group-item a{
         word-break: break-all;
     }
-/*    .list-group-item h4{
-        margin-bottom: 20px;
-    }
-    .list-group-item p{
-        margin-top: 20px;
-    }*/
+
 </style>	
 <div class="container">
     <div class="row">
@@ -76,7 +71,7 @@
                   <?php 
                   }
                   if ($count > 0) {?>
-<!--                      <ul class="pagination pagination-lg">
+                      <ul class="pagination pagination-lg">
                       <?php 
                         $numberPage = ceil($count / $NUMBER_ROW_PERPAGE);
 
@@ -154,7 +149,7 @@
                                     <a href="<?php echo $hrefLast; ?>">Last</a>
                                 </li>
 
-                      </ul>-->
+                      </ul>
                         <?php
                     }
                     ?>
@@ -173,33 +168,7 @@
             ?>
             
             
-                <div class="list-group<?php if($search_terms!='') echo ' searched';?>" style="width: 45%;float: left;">
-                    <h1>duckduckgo</h1>
-                    <?php if (isset($result1) && is_array($result1)&& count($result1) > 0){?>
-                  <?php for ($i=0;$i<count($result1);$i++){?>
-                      
-<!--                    <a href="<?php // echo recursiveFind($result1[$i],'FirstURL');?>" class="list-group-item" target="_blank">
-                        <h4 class="list-group-item-heading"><?php // echo recursiveFind($result1[$i],'Text');?></h4>
-                        <p class="list-group-item-text"></p>
-                    </a>-->
-                    <div style="color:#555;" class="list-group-item">
-                        <h4 class="list-group-item-heading"><?php echo $result1[$i]['title'];?></h4>
-                        <a href="<?php echo $result1[$i]['url'];?>" target="_blank"><?php echo $result1[$i]['url'];?></a>
-                        <p class="list-group-item-text"><?php echo $result1[$i]['desc'];?></p>
-                    </div>
-                    <?php 
-            }
-            ?>
-                  <?php }
-                  else{
-                      if ($search_terms!=''){
-                          echo $html;
-                          echo 'no result';
-                      }
-                      
-                  }
-                  ?>
-                </div>
+                
 
         </form>
     </div>
