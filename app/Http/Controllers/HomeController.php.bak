@@ -33,7 +33,6 @@ class HomeController extends Controller {
             $this->start_shopee($keywork);
             $this->start_lazada($keywork);
             $this->start_carousell($keywork);
-            $this->start_ezbuy($keywork);
             return view('result', [
                 'result' => $this->allProducts,
             ]);
@@ -42,61 +41,6 @@ class HomeController extends Controller {
         return view('home', [
             'result' => $this->allProducts,
         ]);
-    }
-
-    private function start_ezbuy($keywork) {
-
-        $keywork = str_replace('"', '\"', $keywork);
-        $keywork = str_replace("'", "\'", $keywork);
-        $json_data = array(
-                            'searchCondition' => array( 
-                                                'limit' => 56, 
-                                                'offset' => 0, 
-                                                'propValues' =>array(), 
-                                                'filters' =>array(), 
-                                                'keyWords' => $keywork, 
-                                                'categoryId' => 0
-                                            ),
-                            'limit' => 56, 
-                            'offset' => 0, 
-                            'language' => 'en', 
-                            'dataType' => 'new');
-
-        $json_data = $this->curl_getcontent("https://sg-en-web-api.ezbuy.sg/api/EzCategory/ListProductsByCondition",json_encode($json_data),'https://ezbuy.sg/category/?keywords='.urlencode($keywork));
-        $json_data = json_decode($json_data, true);
-        //check isset products
-        if(isset($json_data['products'])  && !empty($json_data['products']) ){
-            foreach ($json_data['products'] as $product) {
-                // $product
-                if(isset($product['name']) && trim($product['name'])!='' ){
-
-                    if(isset($product['originPrice']) && $product['originPrice']!=$product['price']){
-                        $price = $product['originPrice'];
-                        $sale_price = $product['price'];
-                    }
-                    else{
-                        $price = $product['price'];
-                        $sale_price = 0;
-                    }
-
-                    $data = array(
-                            'product_name'=>$product['name'],
-                            'product_url'=>(isset($product['url']))?"https://ezbuy.sg/product/".trim($product['url']).".html":'',
-                            'image'=>(isset($product['picture']))?trim($product['picture']):'',
-                            'price'=>$price,
-                            'sale_price'=>$sale_price,
-                            'store_name'=>(isset($product['titleIcons'][0]['text']))?trim($product['titleIcons'][0]['text']):'',
-                            'store_url'=>'#',
-                        );
-
-                    $data['site'] = 'ezbuy';
-
-                    //merege data
-                    $this->allProducts[]= $data;
-                }
-            }//end loop all products
-        }//end check isset products
-        
     }
 
     private function start_shopee($keywork) {
