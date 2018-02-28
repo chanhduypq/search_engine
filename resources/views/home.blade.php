@@ -4,14 +4,14 @@
 <div class="my_loading">
 </div>
 <img src="public/images/loading.gif" class="my_loading">
-<div class="container">
+<div class="container" style="min-height: 400px;">
     <div class="row">
 
         <form id="frm">
     
             <!--<h2>Custom Search</h2>-->
             <div id="custom-search-input" style="margin-top: 50px;">
-                <div class="input-group col-md-12">
+                <div class="input-group col-md-4">
                     <input placeholder="Please enter keyword" type="text" class="search-query form-control" id="keywork" name="keywork"/>
                     <li class="input-group-btn">
                         <button class="btn btn-danger" type="submit">
