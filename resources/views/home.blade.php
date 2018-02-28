@@ -4,28 +4,26 @@
 <div class="my_loading">
 </div>
 <img src="public/images/loading.gif" class="my_loading">
-<div class="container" style="min-height: 400px;">
-    <div class="row">
 
-        <form id="frm">
-    
-            <!--<h2>Custom Search</h2>-->
-            <div id="custom-search-input" style="margin-top: 50px;">
-                <div class="input-group col-md-4">
-                    <input placeholder="Please enter keyword" type="text" class="search-query form-control" id="keywork" name="keywork"/>
-                    <li class="input-group-btn">
-                        <button class="btn btn-danger" type="submit">
-                            <li class="glyphicon glyphicon-search"></li>
-                        </button>
-                    </li>
-                </div>
+    <form id="frm">
+
+        <!--<h2>Custom Search</h2>-->
+        <div id="custom-search-input" style="margin-top: 50px;">
+            <div class="input-group col-md-4">
+                <input placeholder="Please enter keyword" type="text" class="search-query form-control" id="keywork" name="keywork"/>
+                <li class="input-group-btn">
+                    <button class="btn btn-danger" type="submit">
+                        <li class="glyphicon glyphicon-search"></li>
+                    </button>
+                </li>
             </div>
-            <div id="result" class="list-group searched" style="width: 100%;display: none;">
-                <!--<h1>Result</h1>-->
-            </div>
-        </form>
-    </div>
-</div>
+        </div>
+        <div id="result" class="list-group row" style="display: none;">
+            <!--<h1>Result</h1>-->
+        </div>
+    </form>
+
+
 <script type="text/javascript">
     jQuery(function ($){
         $("#frm").submit(function (e){
@@ -46,7 +44,7 @@
             });
         });
         
-        $("body").delegate(".store_name.lazada", "click", function(){
+        $("body").delegate(".lazada-store", "click", function(){
             $('.my_loading').show();
             product_url=$(this).parent().find('.name').eq(0).find('a').eq(0).attr('href');
             $.ajax({

@@ -1,3 +1,78 @@
+/*jack*/
+#result h4{
+    margin-bottom: 10px;
+}
+#result h4 a{
+    color: #fff;
+    font-size: 14px;
+    background-color: orange;
+    padding: 2px 5px;
+    border-radius: 2px;
+}
+#result h4 a:hover{
+    text-decoration: none;
+}
+#result a.title{
+    font-size: 14px;
+}
+#result a.title:hover{
+    text-decoration: none;
+}
+#result .price{
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+#result .sale-price,#result .current-price{
+    color: #ff5722;
+    font-size: 22px;
+}
+#result .list-group-item-text{
+    overflow: hidden;
+    word-wrap: break-word;
+    line-height: 1.8rem;
+    height: 7rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+#result .origin-price{
+    font-size: 15px;
+    text-decoration: line-through;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 10px;
+}
+#result .store a{
+    color: #fff;
+    font-size: 12px;
+    background-color: #ff5722;
+    padding: 4px 10px;
+    border-radius: 2px;
+    height: 24px;
+    display: inline-block;
+    overflow: hidden;
+}
+#result .store a:hover{
+    opacity: 0.9;
+    text-decoration: none;
+}
+#result .main-image{
+    height: 200px;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+}
+#result #main-image a{
+    display: block;
+}
+#result .main-image img{
+    display: inline-block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/*end jack*/
+
 #custom-search-input{
     margin-bottom: 20px;
 }
@@ -23,7 +98,7 @@ div.info,div.photo{
     float: left;
 }
 div.photo{
-    width: 30%;
+    padding-right: 30px;
 }
 div.info{
     width: 70%;

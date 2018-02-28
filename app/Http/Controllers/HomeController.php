@@ -21,6 +21,7 @@ class HomeController extends Controller {
     }
 
     public function search(Request $request) {
+
         @set_time_limit(0);
         @ini_set('max_execution_time', 0);
         require_once 'simple_html_dom.php';
@@ -34,6 +35,31 @@ class HomeController extends Controller {
             $this->start_lazada($keywork);
             $this->start_carousell($keywork);
             $this->start_ezbuy($keywork);
+            
+            $datas = array();
+            foreach ($this->allProducts as &$data){
+                $data['price']= str_replace(",", "", $data['price']);
+                preg_match_all('!\d+\.*\d*!',  $data['price'], $matches);
+                if(ceil($matches[0][0])== floor($matches[0][0])){
+                    $data['price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+                }
+                else{
+                    $data['price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+                }
+                
+                if($data['sale_price']!=''){
+                    $data['sale_price']= str_replace(",", "", $data['sale_price']);
+                    preg_match_all('!\d+\.*\d*!',  $data['sale_price'], $matches);
+                    if(ceil($matches[0][0])== floor($matches[0][0])){
+                        $data['sale_price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+                    }
+                    else{
+                        $data['sale_price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+                    }
+                }
+                
+            }
+
             return view('result', [
                 'result' => $this->allProducts,
             ]);
@@ -132,8 +158,8 @@ class HomeController extends Controller {
                             'product_name' => $product['name'],
                             'product_url' => "https://shopee.sg/product/" . $product['shopid'] . "/" . $product['itemid'] . "/",
                             'image' => (trim($product['image']) != '') ? "https://cfshopeesg-a.akamaihd.net/file/" . trim($product['image']) . "_tn" : '',
-                            'price' => $price,
-                            'sale_price' => $sale_price,
+                            'price' => $price/100000,
+                            'sale_price' => $sale_price/100000,
                             'store_name' => 'go to shop',
                             'store_url' => "https://shopee.sg/shop/" . $product['shopid'] . "/"
                         );
