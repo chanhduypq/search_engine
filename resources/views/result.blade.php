@@ -22,12 +22,14 @@
                     </div>
                     <div class="row store">
                         <div class="col-xs-12">
-                            <?php if(strpos($item['product_url'], 'lazada.sg')===false): ?>
-                                <span class="pull-right"><a href="{{ $item['store_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
+                            <?php if(strpos($item['product_url'], 'lazada.sg')!==false): ?>
+                                 <span class="pull-right"><a href="javascript:void(0);" class="lazada-store" data-url="{{ $item['product_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
+                            <?php elseif(strpos($item['product_url'], 'ezbuy.sg')!==false): ?>
+                                <span class="pull-right"><a href="javascript:void(0);" class="ezbuy-store" data-url="{{ $item['product_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
                             <?php else: ?>
-                                <span class="pull-right"><a href="javascript:void(0);" class="lazada-store" target="_blank">{{ $item['store_name'] }}</a></span>
+                                <span class="pull-right"><a href="{{ $item['store_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
                             <?php endif; ?>
-                            
+                            <div class="lds-ring" style="display: none;"><div></div><div></div><div></div><div></div></div>
                         </div>
                     </div>
                 </div>

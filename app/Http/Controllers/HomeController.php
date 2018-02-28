@@ -10,6 +10,7 @@ class HomeController extends Controller {
     public $getfirstpage = true;
     public $via_proxy = true;
     public $proxyAuth = 'galvin24x7:egor99';
+    public $mysqli;
 
     /**
      * Create a new controller instance.
@@ -17,11 +18,12 @@ class HomeController extends Controller {
      * @return void
      */
     public function __construct() {
-        
+        $this->mysqli = new \mysqli('localhost', 'root', '', 'engine_search');
+        $this->mysqli->query('SET NAMES utf8;');
     }
 
     public function search(Request $request) {
-
+        
         @set_time_limit(0);
         @ini_set('max_execution_time', 0);
         require_once 'simple_html_dom.php';
@@ -30,36 +32,43 @@ class HomeController extends Controller {
 
         if ($keywork = $request->post('keywork')) {
 
-            $this->start_qoo10($keywork);
-            $this->start_shopee($keywork);
-            $this->start_lazada($keywork);
-            $this->start_carousell($keywork);
-            $this->start_ezbuy($keywork);
-            
-            $datas = array();
-            foreach ($this->allProducts as &$data){
-                $data['price']= str_replace(",", "", $data['price']);
-                preg_match_all('!\d+\.*\d*!',  $data['price'], $matches);
-                if(ceil($matches[0][0])== floor($matches[0][0])){
-                    $data['price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
-                }
-                else{
-                    $data['price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
-                }
-                
-                if($data['sale_price']!=''){
-                    $data['sale_price']= str_replace(",", "", $data['sale_price']);
-                    preg_match_all('!\d+\.*\d*!',  $data['sale_price'], $matches);
-                    if(ceil($matches[0][0])== floor($matches[0][0])){
-                        $data['sale_price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+            $sql="select *,date(created_at) as date from product where keyword like '".str_replace("'", "\'", $keywork)."'";
+            $result=$this->mysqli->query($sql);
+            $deleted=false;
+            if($result->num_rows>0){
+                while ($row = $result->fetch_assoc()) {
+                    if ($row['date'] != date('Y-m-d')) {
+                        $sql = "delete from product where keyword like '" . str_replace("'", "\'", $keywork) . "'";
+                        $this->mysqli->query($sql);
+                        $deleted=true;
+                        break;
                     }
-                    else{
-                        $data['sale_price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+                    $data = $row;
+                    if (ceil($data['price']) == floor($data['price'])) {
+                        $data['price'] = '$' . number_format(intval($data['price']), 0, ".", ",");
+                    } else {
+                        $data['price'] = '$' . number_format($data['price'], 2, ".", ",");
                     }
-                }
-                
-            }
 
+                    if ($data['sale_price'] != '') {
+                        if (ceil($data['sale_price']) == floor($data['sale_price'])) {
+                            $data['sale_price'] = '$' . number_format(intval($data['sale_price']), 0, ".", ",");
+                        } else {
+                            $data['sale_price'] = '$' . number_format($data['sale_price'], 2, ".", ",");
+                        }
+                    }
+
+                    $this->allProducts[] = $data;
+                }
+                if($deleted){
+                    $this->insert($keywork);
+                }
+            }
+            else{
+                $this->insert($keywork);
+            }
+            
+            
             return view('result', [
                 'result' => $this->allProducts,
             ]);
@@ -68,6 +77,76 @@ class HomeController extends Controller {
         return view('home', [
             'result' => $this->allProducts,
         ]);
+    }
+    
+    
+
+    public function getStoreUrl(Request $request){
+
+        $result = '';
+        if ($url = $request->post('url')) {
+            //get id
+            $id = str_replace(array('https://ezbuy.sg/product/','.html'), '', $url);
+            //json content
+            $json = '{"catalogCode":"SG","identifier":"'.trim($id).'","entrance":1,"src":"","userInfo":{"customerId":0,"isPrime":false},"loadLocal":false}';
+            //get product details
+            $json_data = $this->curl_getcontent("https://sg-en-web-api.ezbuy.sg/api/EzProduct/GetProduct",$json,$url);
+            $json_data = json_decode($json_data,true);
+            //check isset shop name
+            if(isset($json_data['shopName']) && trim($json_data['shopName'])!=''){
+                $result = "https://ezbuy.sg/shop/".trim($json_data['shopName']);
+            }
+        }
+        //return
+        return $result;
+    }
+    
+    private function insert($keywork){
+        $this->start_qoo10($keywork);
+        $this->start_shopee($keywork);
+        $this->start_lazada($keywork);
+        $this->start_carousell($keywork);
+        $this->start_ezbuy($keywork);
+        foreach ($this->allProducts as &$data){
+            $data['price']= str_replace(",", "", $data['price']);
+            preg_match_all('!\d+\.*\d*!',  $data['price'], $matches);
+            if(ceil($matches[0][0])== floor($matches[0][0])){
+                $data['price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+            }
+            else{
+                $data['price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+            }
+
+            if($data['sale_price']!=''){
+                $data['sale_price']= str_replace(",", "", $data['sale_price']);
+                preg_match_all('!\d+\.*\d*!',  $data['sale_price'], $matches);
+                if(ceil($matches[0][0])== floor($matches[0][0])){
+                    $data['sale_price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+                }
+                else{
+                    $data['sale_price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+                }
+            }
+        }
+
+        $sql = 'INSERT INTO product (product_name,product_url,image,price,sale_price,store_name,store_url,currency,keyword,created_at,site) VALUES ';
+        foreach ($this->allProducts as $data) {
+            $price = str_replace(",", "", $data['price']);
+            $price = str_replace("$", "", $price);
+            $sale_price = str_replace(",", "", $data['sale_price']);
+            $sale_price = str_replace("$", "", $sale_price);
+            if($sale_price==''){
+                $sale_price='NULL';
+            }
+            $sql .= "('" . str_replace("'", "\'", $data['product_name']) . "','" .
+                    str_replace("'", "\'", $data['product_url']) . "','" .
+                    $data['image'] .
+                    "',$price,$sale_price,'" . str_replace("'", "\'", $data['store_name']) . "','" .
+                    str_replace("'", "\'", $data['store_name']) .
+                    "','$','".str_replace("'", "\'", $keywork)."','".date('Y-m-d')."','".$data['site']."'),";
+        }
+        $sql = rtrim($sql, ',');
+        $this->mysqli->query($sql);
     }
 
     private function start_ezbuy($keywork) {
@@ -111,7 +190,7 @@ class HomeController extends Controller {
                             'image'=>(isset($product['picture']))?trim($product['picture']):'',
                             'price'=>$price,
                             'sale_price'=>$sale_price,
-                            'store_name'=>(isset($product['titleIcons'][0]['text']))?trim($product['titleIcons'][0]['text']):'',
+                            'store_name'=>(isset($product['titleIcons'][0]['text']) && trim($product['titleIcons'][0]['text'])!='')?trim($product['titleIcons'][0]['text']):'go to shop',
                             'store_url'=>'#',
                         );
 

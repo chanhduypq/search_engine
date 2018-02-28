@@ -1,10 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="my_loading">
-</div>
-<img src="public/images/loading.gif" class="my_loading">
-
+    <div class="loading" id="loading" style="display: none;">Loading&#8230;</div>
+    
     <form id="frm">
 
         <!--<h2>Custom Search</h2>-->
@@ -24,46 +22,65 @@
     </form>
 
 
-<script type="text/javascript">
-    jQuery(function ($){
-        $("#frm").submit(function (e){
-            e.preventDefault();
-            if($.trim($("#keywork").val())==''){
-                alert("Please enter keywork.");
-                return;
-            }
-            $('.my_loading').show();
-            $("#result").html('').hide();
-            $.ajax({
-               url: "{{ route('search') }}"+"?keywork="+$.trim($("#keywork").val()),
-               type: 'GET',
-               success: function (data, textStatus, jqXHR) {
-                  $('.my_loading').hide();
-                  $("#result").show().html(data);      
-               }
-            });
-        });
-        
-        $("body").delegate(".lazada-store", "click", function(){
-            $('.my_loading').show();
-            product_url=$(this).parent().find('.name').eq(0).find('a').eq(0).attr('href');
-            $.ajax({
-               url: product_url,
-               type: 'GET',
-               success: function (data, textStatus, jqXHR) {
-                  $('.my_loading').hide();
-                  nodes=$.parseHTML(data);
-                  url=$(nodes).find('div.seller-name__detail').eq(0).find('a').eq(0).attr('href');
-                  if(url != undefined && url != 'undefined' && url !=''){
-                      window.open(url,'_blank'); 
-                  }
-                  else{
-                      window.open('https://lazada.sg','_blank'); 
-                  }
-                     
-               }
-            });
-        });
-    });
-</script>
+  <script type="text/javascript">
+      jQuery(function ($){
+          $("#frm").submit(function (e){
+              e.preventDefault();
+              if($.trim($("#keywork").val())==''){
+                  alert("Please enter keywork.");
+                  return;
+              }
+              $('#loading').show();
+              $("#result").html('').hide();
+              $.ajax({
+                 url: "{{ route('search') }}"+"?keywork="+$.trim($("#keywork").val()),
+                 type: 'GET',
+                 success: function (data, textStatus, jqXHR) {
+                    $('#loading').hide();
+                    $("#result").show().html(data);      
+                 }
+              });
+          });
+
+          $("body").delegate(".lazada-store", "click", function(){
+              var loadding = $(this).closest('.store').find('.lds-ring');
+              loadding.show();
+              var product_url=$(this).attr('data-url');
+              $.ajax({
+                 url: product_url,
+                 type: 'GET',
+                 success: function (data, textStatus, jqXHR) {
+                    loadding.hide();
+                    nodes=$.parseHTML(data);
+                    url=$(nodes).find('div.seller-name__detail').eq(0).find('a').eq(0).attr('href');
+                    if(url != undefined && url != 'undefined' && url !=''){
+                        window.open('https:'+url,'_blank'); 
+                    }
+                    else{
+                        window.open('https://lazada.sg','_blank'); 
+                    }
+                       
+                 }
+              });
+          });
+          
+
+          $("body").delegate(".ezbuy-store", "click", function(){
+              var loadding = $(this).closest('.store').find('.lds-ring');
+              loadding.show();
+              var product_url=$(this).attr('data-url');
+              $.ajax({
+                 url: "{{ route('getstoreurl') }}",
+                 type: 'post',
+                 data: {'url': product_url},
+                 success: function (data, textStatus, jqXHR) {
+                    loadding.hide();
+                    if(textStatus=='success' && data!=''){
+                       window.open(data,'_blank'); 
+                    }
+                 }
+              });
+          });
+      });
+  </script>
 @stop

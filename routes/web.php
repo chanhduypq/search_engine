@@ -20,3 +20,8 @@ $router->post('/', [
 	'as' => 'search',
 	'uses' => 'HomeController@search',
 ]);
+
+$router->post('/getstoreurl', [
+	'as' => 'getstoreurl',
+	'uses' => 'HomeController@getStoreUrl',
+]);
