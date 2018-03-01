@@ -11,6 +11,8 @@ class HomeController extends Controller {
     public $via_proxy = true;
     public $proxyAuth = 'galvin24x7:egor99';
     public $mysqli;
+    public $min_price = 0;
+    public $max_price = 0;
 
     /**
      * Create a new controller instance.
@@ -23,7 +25,7 @@ class HomeController extends Controller {
     }
 
     public function search(Request $request) {
-        
+
         @set_time_limit(0);
         @ini_set('max_execution_time', 0);
         require_once 'simple_html_dom.php';
@@ -33,13 +35,16 @@ class HomeController extends Controller {
 
         if ($keywork = $request->post('keywork')) {
             $this->insert($keywork);
+            $this->setMinAndMaxPrice();
             return view('result', [
                 'result' => $this->allProducts,
+                'min_price' => intval(floor($this->min_price)),
+                'max_price' => intval(ceil($this->max_price)),
             ]);
         } else {
             $sql = "select created_at,keyword from product order by id desc LIMIT 1";
             $result = $this->mysqli->query($sql);
-            
+
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     $created_at = $row['created_at'];
@@ -64,46 +69,49 @@ class HomeController extends Controller {
                         }
                     }
 
-                    if ($data['site'] != 'carousell' || $data['price'] != 0) {
+                    if ($data['price'] != '$0') {
                         $this->allProducts[] = $data;
                     }
                 }
+
+                $this->setMinAndMaxPrice();
             }
         }
 
         return view('home', [
             'result' => $this->allProducts,
-            'keywork' => $keywork
+            'keywork' => $keywork,
+            'min_price' => intval(floor($this->min_price)),
+            'max_price' => intval(ceil($this->max_price)),
         ]);
     }
-	
-	public function sort($keywork,$name,$order) {
-        
+
+    public function sort($keywork, $name, $order) {
+
         @set_time_limit(0);
         @ini_set('max_execution_time', 0);
 
         if ($keywork) {
-            $keywork= urldecode($keywork);
-            
+            $keywork = urldecode($keywork);
+
             $sql = "select created_at from product where keyword like '$keywork' order by id desc LIMIT 1";
-           
+
             $result = $this->mysqli->query($sql);
-            
+
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     $created_at = $row['created_at'];
                     break;
                 }
-                if($name=='default'){
-                    $orderBy='';
-                }
-                else{
+                if ($name == 'default') {
+                    $orderBy = '';
+                } else {
                     if ($name == 'price') {
-                        $name = 'CAST(price as DECIMAL(11,2))';
+                        $name = 'CAST(p as DECIMAL(11,2))';
                     }
-                    $orderBy = 'order by '. $name . ' ' . $order;
+                    $orderBy = 'order by ' . $name . ' ' . $order;
                 }
-                $sql = "select * from product where created_at='$created_at' and keyword like '$keywork' $orderBy";
+                $sql = "select *,(case when (sale_price is NULL or sale_price=0) THEN price ELSE sale_price END) as p from product where created_at='$created_at' and keyword like '$keywork' $orderBy";
                 $result = $this->mysqli->query($sql);
                 while ($row = $result->fetch_assoc()) {
                     $data = $row;
@@ -121,64 +129,107 @@ class HomeController extends Controller {
                         }
                     }
 
-                    if ($data['site'] != 'carousell' || $data['price'] != 0) {
+                    if ($data['price'] != '$0') {
                         $this->allProducts[] = $data;
                     }
                 }
+
+                $this->setMinAndMaxPrice();
             }
         }
 
         return view('result', [
             'result' => $this->allProducts,
+            'min_price' => intval(floor($this->min_price)),
+            'max_price' => intval(ceil($this->max_price)),
         ]);
     }
-    
-    
 
-    public function getStoreUrl(Request $request){
+    public function getStoreUrl(Request $request) {
 
         $result = '';
         if ($url = $request->post('url')) {
             //get id
-            $id = str_replace(array('https://ezbuy.sg/product/','.html'), '', $url);
+            $id = str_replace(array('https://ezbuy.sg/product/', '.html'), '', $url);
             //json content
-            $json = '{"catalogCode":"SG","identifier":"'.trim($id).'","entrance":1,"src":"","userInfo":{"customerId":0,"isPrime":false},"loadLocal":false}';
+            $json = '{"catalogCode":"SG","identifier":"' . trim($id) . '","entrance":1,"src":"","userInfo":{"customerId":0,"isPrime":false},"loadLocal":false}';
             //get product details
-            $json_data = $this->curl_getcontent("https://sg-en-web-api.ezbuy.sg/api/EzProduct/GetProduct",$json,$url);
-            $json_data = json_decode($json_data,true);
+            $json_data = $this->curl_getcontent("https://sg-en-web-api.ezbuy.sg/api/EzProduct/GetProduct", $json, $url);
+            $json_data = json_decode($json_data, true);
             //check isset shop name
-            if(isset($json_data['shopName']) && trim($json_data['shopName'])!=''){
-                $result = "https://ezbuy.sg/shop/".trim($json_data['shopName']);
+            if (isset($json_data['shopName']) && trim($json_data['shopName']) != '') {
+                $result = "https://ezbuy.sg/shop/" . trim($json_data['shopName']);
             }
         }
         //return
         return $result;
     }
-    
-    private function insert($keywork){
+
+    private function setMinAndMaxPrice() {
+        foreach ($this->allProducts as $data) {
+            if (str_replace("$", "", $data['price']) > 0) {
+                $this->min_price = str_replace("$", "", $data['price']);
+                break;
+            }
+        }
+
+        foreach ($this->allProducts as $data) {
+            if ($this->min_price > str_replace("$", "", $data['price'])) {
+                $this->min_price = str_replace("$", "", $data['price']);
+            }
+            if (str_replace("$", "", $data['sale_price']) != '' && str_replace("$", "", $data['sale_price']) != '0') {
+                if ($this->min_price > str_replace("$", "", $data['sale_price'])) {
+                    $this->min_price = str_replace("$", "", $data['sale_price']);
+                }
+            }
+
+            if (str_replace("$", "", $data['sale_price']) != '' && str_replace("$", "", $data['sale_price']) != '0') {
+                if ($this->max_price < str_replace("$", "", $data['sale_price'])) {
+                    $this->max_price = str_replace("$", "", $data['sale_price']);
+                }
+            }
+        }
+        if (count($this->allProducts) > 0 && $this->max_price == 0) {
+            foreach ($this->allProducts as $data) {
+                if ($this->max_price < str_replace("$", "", $data['price'])) {
+                    $this->max_price = str_replace("$", "", $data['price']);
+                }
+            }
+        }
+    }
+
+    private function insert($keywork) {
         $this->start_qoo10($keywork);
         $this->start_shopee($keywork);
         $this->start_lazada($keywork);
         $this->start_carousell($keywork);
         $this->start_ezbuy($keywork);
-        foreach ($this->allProducts as &$data){
-            $data['price']= str_replace(",", "", $data['price']);
-            preg_match_all('!\d+\.*\d*!',  $data['price'], $matches);
-            if(ceil($matches[0][0])== floor($matches[0][0])){
-                $data['price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+        foreach ($this->allProducts as &$data) {
+            $data['price'] = str_replace(",", "", $data['price']);
+            preg_match_all('!\d+\.*\d*!', $data['price'], $matches);
+            if (isset($matches[0]) && isset($matches[0][0])) {
+                $price = $matches[0][0];
+            } else {
+                $price = '0';
             }
-            else{
-                $data['price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+            if (ceil($price) == floor($price)) {
+                $data['price'] = '$' . number_format(intval($price), 0, ".", ",");
+            } else {
+                $data['price'] = '$' . number_format($price, 2, ".", ",");
             }
 
-            if($data['sale_price']!=''){
-                $data['sale_price']= str_replace(",", "", $data['sale_price']);
-                preg_match_all('!\d+\.*\d*!',  $data['sale_price'], $matches);
-                if(ceil($matches[0][0])== floor($matches[0][0])){
-                    $data['sale_price']= '$'.number_format(intval($matches[0][0]), 0, ".", ",") ;
+            if ($data['sale_price'] != '') {
+                $data['sale_price'] = str_replace(",", "", $data['sale_price']);
+                preg_match_all('!\d+\.*\d*!', $data['sale_price'], $matches);
+                if (isset($matches[0]) && isset($matches[0][0])) {
+                    $price = $matches[0][0];
+                } else {
+                    $price = '0';
                 }
-                else{
-                    $data['sale_price']= '$'.number_format($matches[0][0], 2, ".", ",") ;
+                if (ceil($price) == floor($price)) {
+                    $data['sale_price'] = '$' . number_format(intval($price), 0, ".", ",");
+                } else {
+                    $data['sale_price'] = '$' . number_format($price, 2, ".", ",");
                 }
             }
         }
@@ -190,15 +241,15 @@ class HomeController extends Controller {
             $price = str_replace("$", "", $price);
             $sale_price = str_replace(",", "", $datas[$i]['sale_price']);
             $sale_price = str_replace("$", "", $sale_price);
-            if($sale_price==''){
-                $sale_price='NULL';
+            if ($sale_price == '') {
+                $sale_price = 'NULL';
             }
             $sql .= "('" . $this->mysqli->real_escape_string($datas[$i]['product_name']) . "','" .
                     $this->mysqli->real_escape_string($datas[$i]['product_url']) . "','" .
                     $this->mysqli->real_escape_string($datas[$i]['image']) .
                     "',$price,$sale_price,'" . $this->mysqli->real_escape_string($datas[$i]['store_name']) . "','" .
                     $this->mysqli->real_escape_string($datas[$i]['store_name']) .
-                    "','$','".$this->mysqli->real_escape_string($keywork)."','".date('Y-m-d H:i:s')."','".$datas[$i]['site']."'),";
+                    "','$','" . $this->mysqli->real_escape_string($keywork) . "','" . date('Y-m-d H:i:s') . "','" . $datas[$i]['site'] . "'),";
         }
         $sql = rtrim($sql, ',');
         $this->mysqli->query($sql);
@@ -210,60 +261,55 @@ class HomeController extends Controller {
         $keywork = str_replace('"', '\"', $keywork);
         $keywork = str_replace("'", "\'", $keywork);
         $json_data = array(
-                            'searchCondition' => array( 
-                                                'limit' => 56, 
-                                                'offset' => 0, 
-                                                'propValues' =>array(), 
-                                                'filters' =>array(), 
-                                                'keyWords' => $keywork, 
-                                                'categoryId' => 0
-                                            ),
-                            'limit' => 56, 
-                            'offset' => 0, 
-                            'language' => 'en', 
-                            'dataType' => 'new');
+            'searchCondition' => array(
+                'limit' => 56,
+                'offset' => 0,
+                'propValues' => array(),
+                'filters' => array(),
+                'keyWords' => $keywork,
+                'categoryId' => 0
+            ),
+            'limit' => 56,
+            'offset' => 0,
+            'language' => 'en',
+            'dataType' => 'new');
 
-        $json_data = $this->curl_getcontent("https://sg-en-web-api.ezbuy.sg/api/EzCategory/ListProductsByCondition",json_encode($json_data),'https://ezbuy.sg/category/?keywords='.urlencode($keywork));
+        $json_data = $this->curl_getcontent("https://sg-en-web-api.ezbuy.sg/api/EzCategory/ListProductsByCondition", json_encode($json_data), 'https://ezbuy.sg/category/?keywords=' . urlencode($keywork));
         $json_data = json_decode($json_data, true);
         //check isset products
-        if(isset($json_data['products'])  && !empty($json_data['products']) ){
+        if (isset($json_data['products']) && !empty($json_data['products'])) {
             foreach ($json_data['products'] as $product) {
                 // $product
-                if(isset($product['name']) && trim($product['name'])!='' ){
+                if (isset($product['name']) && trim($product['name']) != '') {
 
-                    if($this->checkCompareProduct($product['name'], $origin_keywork))
-                    {
+                    if ($this->checkCompareProduct($product['name'], $origin_keywork)) {
 
-                        if(isset($product['originPrice']) && $product['originPrice']!=$product['price']){
+                        if (isset($product['originPrice']) && $product['originPrice'] != $product['price']) {
                             $price = $product['originPrice'];
                             $sale_price = $product['price'];
-                        }
-                        else{
+                        } else {
                             $price = $product['price'];
                             $sale_price = 0;
                         }
 
                         $data = array(
-                                'product_name'=>$product['name'],
-                                'product_url'=>(isset($product['url']))?"https://ezbuy.sg/product/".trim($product['url']).".html":'',
-                                'image'=>(isset($product['picture']))?trim($product['picture']):'',
-                                'price'=>$price,
-                                'sale_price'=>$sale_price,
-                                'store_name'=>(isset($product['titleIcons'][0]['text']) && trim($product['titleIcons'][0]['text'])!='')?trim($product['titleIcons'][0]['text']):'go to shop',
-                                'store_url'=>'#',
-                            );
+                            'product_name' => $product['name'],
+                            'product_url' => (isset($product['url'])) ? "https://ezbuy.sg/product/" . trim($product['url']) . ".html" : '',
+                            'image' => (isset($product['picture'])) ? trim($product['picture']) : '',
+                            'price' => $price,
+                            'sale_price' => $sale_price,
+                            'store_name' => (isset($product['titleIcons'][0]['text']) && trim($product['titleIcons'][0]['text']) != '') ? trim($product['titleIcons'][0]['text']) : 'go to shop',
+                            'store_url' => '#',
+                        );
 
                         $data['site'] = 'ezbuy';
 
                         //merege data
-                        $this->allProducts[]= $data;
-
+                        $this->allProducts[] = $data;
                     }//end checkCompareProduct
-
                 }
             }//end loop all products
         }//end check isset products
-        
     }
 
     private function start_shopee($keywork) {
@@ -287,8 +333,7 @@ class HomeController extends Controller {
 
                     if (isset($product['name']) && trim($product['name']) != '') {
 
-                        if($this->checkCompareProduct($product['name'], $keywork))
-                        {
+                        if ($this->checkCompareProduct($product['name'], $keywork)) {
 
                             if ($product['price_before_discount'] != 0) {
                                 $price = $product['price_before_discount'];
@@ -302,12 +347,12 @@ class HomeController extends Controller {
                                 'product_name' => $product['name'],
                                 'product_url' => "https://shopee.sg/product/" . $product['shopid'] . "/" . $product['itemid'] . "/",
                                 'image' => (trim($product['image']) != '') ? "https://cfshopeesg-a.akamaihd.net/file/" . trim($product['image']) . "_tn" : '',
-                                'price' => $price/100000,
-                                'sale_price' => $sale_price/100000,
+                                'price' => $price / 100000,
+                                'sale_price' => $sale_price / 100000,
                                 'store_name' => 'go to shop',
                                 'store_url' => "https://shopee.sg/shop/" . $product['shopid'] . "/"
                             );
-                            
+
                             $data['site'] = 'shopee';
 
                             //merege data
@@ -355,7 +400,7 @@ class HomeController extends Controller {
                     $data['product_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
                     $data['product_url'] = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
 
-                    if($this->checkCompareProduct($data['product_name'], $keywork)){
+                    if ($this->checkCompareProduct($data['product_name'], $keywork)) {
 
                         //image
                         $tmp = $node->find(".td_thmb img");
@@ -414,8 +459,7 @@ class HomeController extends Controller {
 
                         if (isset($product['name']) && trim($product['name']) != '') {
 
-                            if($this->checkCompareProduct($product['name'], $keywork))
-                            {
+                            if ($this->checkCompareProduct($product['name'], $keywork)) {
 
                                 if (isset($product['originalPrice']) && $product['originalPrice'] != 0) {
                                     $price = $product['originalPrice'];
@@ -434,7 +478,7 @@ class HomeController extends Controller {
                                     'store_name' => (isset($product['sellerName'])) ? trim($product['sellerName']) : '',
                                     'store_url' => (isset($product['sellerId'])) ? trim($product['sellerId']) : '',
                                 );
-                                
+
                                 $data['site'] = 'lazada';
 
                                 //merege data
@@ -458,6 +502,7 @@ class HomeController extends Controller {
         $html_base = new \simple_html_dom();
         $html_base->load($html);
 
+
         $nodes = $html_base->find(".card-row .col-lg-3");
         foreach ($nodes as $node) {
             if ($node->{'data-reactid'} != '') {
@@ -476,9 +521,7 @@ class HomeController extends Controller {
                 $tmp = $node->find('#productCardTitle');
                 $data['product_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
 
-                if($this->checkCompareProduct($data['product_name'], $keywork))
-                {
-
+                if ($this->checkCompareProduct($data['product_name'], $keywork)) {
                     //product_url
                     $tmp = $node->find('a#productCardThumbnail');
                     $tmp = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
@@ -509,11 +552,9 @@ class HomeController extends Controller {
 
                     $data['site'] = 'carousell';
                     //merege data
-                    if($data['price']!=0 && $data['price']!='$0'){
+                    if ($data['price'] != '0' && $data['price'] != '$0' && $data['price'] != '' && $data['price'] != 'S$0') {
                         $this->allProducts[] = $data;
                     }
-                    
-
                 }//end checkCompareProduct
             }//end check is product item
         }//end foreach
@@ -535,22 +576,22 @@ class HomeController extends Controller {
         return $result;
     }
 
-    private function checkCompareProduct($product_name, $keywork){
-        
+    private function checkCompareProduct($product_name, $keywork) {
+
         $result = true;
-        $product_name = str_replace(array('_','-'), ' ', strtolower($product_name));
-        $keywork = trim(str_replace(array('_','-'), ' ', strtolower($keywork)));
+        $product_name = str_replace(array('_', '-'), ' ', strtolower($product_name));
+        $keywork = trim(str_replace(array('_', '-'), ' ', strtolower($keywork)));
 
         $keyworks = explode(' ', $keywork);
         $keyworks = array_filter($keyworks);
 
         foreach ($keyworks as $tmp_keywork) {
-            if(strrpos($product_name, $tmp_keywork)===false){
+            if (strrpos($product_name, $tmp_keywork) === false) {
                 $result = false;
                 break;
             }
         }
-        
+
         //return
         return $result;
     }

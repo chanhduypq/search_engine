@@ -42,4 +42,6 @@ else:
     echo 'no result'; 
 endif;
 ?>
+    <input type="hidden" id="min_price" value="{{ $min_price }}"/>
+    <input type="hidden" id="max_price" value="{{ $max_price }}"/>
 

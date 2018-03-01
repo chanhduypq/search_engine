@@ -18,8 +18,9 @@
                 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
                 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 	</head>
-	<body id="track_page" style="display: none;">
-		<div class="container">
+        
+	<body id="track_page">
+<!--		<div class="container">
                     <nav class="navbar navbar-default" style="margin-bottom: 5px;">
                         <div class="container-fluid">
                             <ul class="nav navbar-nav">
@@ -27,7 +28,7 @@
                             </ul>
                         </div>
                     </nav>
-		</div>
+		</div>-->
 				   
 		<div class="container" style="min-height: 400px;">
                     @yield('content')
@@ -35,7 +36,7 @@
                 
                 
 
-		<footer class="m-t">
+<!--		<footer class="m-t">
 			<div class="container">
 				<div class="panel panel-default">
 					<div class="panel-body text-center">
@@ -43,7 +44,7 @@
 					</div>
 				</div>
 			</div>
-		</footer>
+		</footer>-->
 		
 		<!-- end DVD code Modal -->
 		

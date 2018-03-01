@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/css/bootstrap-slider.min.css">
     <div class="loading" id="loading" style="display: none;">Loading&#8230;</div>
     
-    <form id="frm">
+    <form id="frm" style="display: none;">
 
         <!--<h2>Custom Search</h2>-->
         <div id="custom-search-input" style="margin-top: 50px;">
@@ -36,7 +36,7 @@
 
             <div class="col-md-5">
               <div class="price-fillter pull-right">
-                <strong>Filter by price:</strong> <strong>$ 0</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="0" data-slider-max="1000" data-slider-step="5" data-slider-value="[0,1000]"/> <strong>$ 1000+</strong>
+                <strong>Filter by price:</strong> <strong>$ {{ $min_price }}</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="{{ $min_price }}" data-slider-max="{{ $max_price }}" data-slider-step="5" data-slider-value="[{{ $min_price }},{{ $max_price }}]"/> <strong>$ {{ $max_price }}</strong>
               </div>
             </div>
 			
@@ -49,8 +49,8 @@
                             <option value="price_desc">Price (Hight to low)</option>
                             <option value="name_asc">Name (A to Z)</option>
                             <option value="name_desc">Name (Z to A)</option>
-                            <option value="site_asc">Marketplace (A to Z)</option>
-                            <option value="site_desc">Marketplace (Z to A)</option>
+<!--                            <option value="site_asc">Marketplace (A to Z)</option>
+                            <option value="site_desc">Marketplace (Z to A)</option>-->
                         </select>
                     </div>
 
@@ -64,35 +64,41 @@
         </div>
     </form>
 
+    <div id="dialog-form" title="Please enter the password." style="margin: 0 auto;text-align: center;">
+        <input type="password" name="password" id="password" value="" class="text ui-widget-content ui-corner-all">
+    </div>
 
   <script type="text/javascript">
 
-        $(document).ready(function() {
-
-            if ($.cookie('user_password')!="galvindavid"){
-
-                var password = prompt("Please enter the password.");
-                if (password==="galvindavid"){
-                    $.cookie('user_password','galvindavid');
-                    $('#track_page').show();
-                } else{
-                    while(password !=="galvindavid"){
-                        password = prompt("Please enter the password.");
-                        if (password==="galvindavid"){
-                            $.cookie('user_password','galvindavid');
-                            $('#track_page').show();
-                        }
-                    }
-                }
+        function authentication(){
+             if($("#password").val()=='galvindavid'){
+                 $.cookie('user_password','galvindavid');
+                 dialog.dialog( "close" );
+                 $("#frm").show();
+             }
+        }
+        
+      jQuery(function ($){
+          
+          if ($.cookie('user_password')!="galvindavid"){
+                dialog = $( "#dialog-form" ).dialog({
+                  autoOpen: true,
+                  height: 200,
+                  width: 350,
+                  modal: true,
+                  buttons: {
+                    "Ok.": authentication
+                  },
+                  close: function() {
+                  }
+                });
+                $(".ui-button.ui-corner-all.ui-widget.ui-button-icon-only.ui-dialog-titlebar-close").hide();
             }
             else{
-                $('#track_page').show();
+                $("#frm").show();
             }
-        });
 
-
-      jQuery(function ($){
-
+            $("#sort").val('default');
             $( '.categories-multiple-allproducts option' ).each(function() {
                var count_cat = $('.product-item[data-site='+$(this).val()+']').length;
                if(count_cat<=1){
@@ -129,7 +135,6 @@
 
             });
 
-
             $('.categories-multiple-allproducts').multiselect(
                 {
                     nonSelectedText: '- All Marketplace -',
@@ -160,14 +165,10 @@
                 }
             );
 
-
-
-
-
           $("#frm").submit(function (e){
               e.preventDefault();
               if($.trim($("#keywork").val())==''){
-                  alert("Please enter keywork.");
+                  alert("Please enter keyword.");
                   return;
               }
               $('#loading').show();
@@ -177,7 +178,67 @@
                  type: 'GET',
                  success: function (data, textStatus, jqXHR) {
                     $('#loading').hide();
-                    $("#result").show().html(data);      
+                    $("#result").show().html(data);  
+                    
+                    $("#sort").val('default');
+                    
+                    $(".input-group.categories-fillter").find('select').eq(0).remove();
+                    $(".input-group.categories-fillter").find('div').eq(0).remove();
+                    $(".input-group.categories-fillter").append('<select class="form-control categories categories-multiple-allproducts" style="visibility: hidden;"  name="categories[]" multiple="multiple">'+
+                  '<option value="qoo10">qoo10</option>'+
+                  '<option value="shopee">Shoppe</option>'+
+                  '<option value="lazada">Lazada</option>'+
+                  '<option value="carousell">carousell</option>'+
+                  '<option value="ezbuy">ezbuy</option>'+
+                '</select>');
+                    $( '.categories-multiple-allproducts option' ).each(function() {
+                           var count_cat = $('.product-item[data-site='+$(this).val()+']').length;
+                           if(count_cat<=1){
+                                $(this).html($(this).val()+' ('+count_cat+' product)');
+                           }
+                           else{
+                                $(this).html($(this).val()+' ('+count_cat+' products)');
+                           }
+                        });
+
+                    $('.categories-multiple-allproducts').multiselect(
+                        {
+                            nonSelectedText: '- All Marketplace -',
+                            buttonWidth: '200px',
+                            onChange: function(option, checked) {
+
+                                //filterByCategories
+                                var current_option = $('.product-item[data-site='+option.val()+']');
+                                  if($('.categories-multiple-allproducts :selected').length==1 && checked==true){
+                                    $('.product-item').not(current_option).hide();
+                                    $('.product-item').not(current_option).addClass('select-category-hide');
+                                  }
+                                  else if($('.categories-multiple-allproducts :selected').length==0){
+                                    $('.product-item').not('.slide-price-hide').show();
+                                    $('.product-item').not('.slide-price-hide').removeClass('select-category-hide');
+                                  }
+                                  else{
+                                      if(checked==true){
+                                        current_option.removeClass('select-category-hide');
+                                        current_option.not('.slide-price-hide').show();
+                                      }
+                                      else{
+                                        current_option.addClass('select-category-hide');
+                                        current_option.hide();
+                                      }
+                                  }
+                            }
+                        }
+                    );
+                    
+                    min_price=$("#min_price").val();
+                    max_price=$("#max_price").val();
+                    $("#ex2").attr('data-slider-min',min_price).attr('data-slider-max',max_price).attr('value',min_price+","+max_price).attr('data-value',min_price+","+max_price).attr('data-slider-value',"["+min_price+","+max_price+"]");
+                    $('.min-slider-handle').attr('aria-valuenow',min_price);
+                    $('.max-slider-handle').attr('aria-valuenow',max_price);//.css('left','100%');
+                    
+                    $(".price-fillter.pull-right").find('strong').eq(1).html("$ "+min_price);
+                    $(".price-fillter.pull-right").find('strong').eq(2).html("$ "+max_price);
                  }
               });
           });
@@ -222,7 +283,7 @@
               });
           });
 		  
-		  $("#sort").change(function (){
+          $("#sort").change(function (){
               if($("#result").html()==''||$.trim($("#keywork").val())==''){
                   return;
               }
