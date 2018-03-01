@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.13/css/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/css/bootstrap-slider.min.css">
     <div class="loading" id="loading" style="display: none;">Loading&#8230;</div>
     
     <form id="frm">
@@ -15,6 +17,30 @@
                     </button>
                 </li>
             </div>
+        </div>
+        <div class="fillter-products">
+          <div class="row">
+            
+            <div class="col-md-6">
+              <div class="input-group categories-fillter">
+                <strong>Filter by categories: </strong>
+                <select class="form-control categories categories-multiple-allproducts" style="visibility: hidden;"  name="categories[]" multiple="multiple">
+                  <option value="1">Lazada (22 products)</option>
+                  <option value="3">Shoppe (15 products)</option>
+                  <option value="4">ezbuy (9 products)</option>
+                  <option value="6">qoo10 (7 products)</option>
+                  <option value="7">carousell (17 products)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="price-fillter pull-right">
+                <strong>Filter by price:</strong> <strong>$ 10</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="10" data-slider-max="1000" data-slider-step="5" data-slider-value="[250,450]"/> <strong>$ 1000</strong>
+              </div>
+            </div>
+
+          </div>
         </div>
         <div id="result" class="list-group row" style="display: <?php if (isset($result) && count($result) > 0) echo 'block'; else echo 'none'; ?>;">
             <!--<h1>Result</h1>-->
@@ -68,6 +94,16 @@
 
   <script type="text/javascript">
       jQuery(function ($){
+
+            var slider = new Slider('#ex2', {});
+
+            $('.categories-multiple-allproducts').multiselect(
+                {
+                    nonSelectedText: '- All Category -',
+                    buttonWidth: '200px'
+                }
+            );
+
           $("#frm").submit(function (e){
               e.preventDefault();
               if($.trim($("#keywork").val())==''){
@@ -127,4 +163,6 @@
           });
       });
   </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.13/js/bootstrap-multiselect.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/bootstrap-slider.min.js"></script>
 @stop

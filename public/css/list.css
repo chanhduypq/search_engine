@@ -1,4 +1,30 @@
 /*jack*/
+.categories-fillter select{
+    height: 34px; 
+    border-radius: 4px;
+}
+.fillter-products{
+    background-color: #F5F5F5;
+    padding: 8px 10px;
+    color: #ff5722;
+    border-radius: 4px;
+    margin-bottom: 25px;
+}
+.fillter-products .price-fillter{
+    line-height: 34px;
+}
+.fillter-products .slider-selection{
+    background: orange !important;
+}
+.fillter-products .slider-handle{
+    background: #ff5722 !important;
+}
+.sort-by select{
+    border-radius: 4px!important;
+}
+#result .item .thumbnail:hover{
+    box-shadow: 0 2px 7px rgba(0,0,0,.2);
+}
 #result h4{
     margin-bottom: 10px;
 }
@@ -71,7 +97,7 @@
 /*end jack*/
 
 #custom-search-input{
-    margin-bottom: 20px;
+    margin-bottom: 35px;
 }
 .list-group.searched{
     border: 1px solid black;

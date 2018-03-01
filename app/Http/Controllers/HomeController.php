@@ -142,12 +142,12 @@ class HomeController extends Controller {
                     "','$','".$this->mysqli->real_escape_string($keywork)."','".date('Y-m-d H:i:s')."','".$data['site']."'),";
         }
         $sql = rtrim($sql, ',');
-        
         $this->mysqli->query($sql);
     }
 
     private function start_ezbuy($keywork) {
 
+        $origin_keywork = $keywork;
         $keywork = str_replace('"', '\"', $keywork);
         $keywork = str_replace("'", "\'", $keywork);
         $json_data = array(
@@ -172,29 +172,35 @@ class HomeController extends Controller {
                 // $product
                 if(isset($product['name']) && trim($product['name'])!='' ){
 
-                    if(isset($product['originPrice']) && $product['originPrice']!=$product['price']){
-                        $price = $product['originPrice'];
-                        $sale_price = $product['price'];
-                    }
-                    else{
-                        $price = $product['price'];
-                        $sale_price = 0;
-                    }
+                    if($this->checkCompareProduct($product['name'], $origin_keywork))
+                    {
 
-                    $data = array(
-                            'product_name'=>$product['name'],
-                            'product_url'=>(isset($product['url']))?"https://ezbuy.sg/product/".trim($product['url']).".html":'',
-                            'image'=>(isset($product['picture']))?trim($product['picture']):'',
-                            'price'=>$price,
-                            'sale_price'=>$sale_price,
-                            'store_name'=>(isset($product['titleIcons'][0]['text']) && trim($product['titleIcons'][0]['text'])!='')?trim($product['titleIcons'][0]['text']):'go to shop',
-                            'store_url'=>'#',
-                        );
+                        if(isset($product['originPrice']) && $product['originPrice']!=$product['price']){
+                            $price = $product['originPrice'];
+                            $sale_price = $product['price'];
+                        }
+                        else{
+                            $price = $product['price'];
+                            $sale_price = 0;
+                        }
 
-                    $data['site'] = 'ezbuy';
+                        $data = array(
+                                'product_name'=>$product['name'],
+                                'product_url'=>(isset($product['url']))?"https://ezbuy.sg/product/".trim($product['url']).".html":'',
+                                'image'=>(isset($product['picture']))?trim($product['picture']):'',
+                                'price'=>$price,
+                                'sale_price'=>$sale_price,
+                                'store_name'=>(isset($product['titleIcons'][0]['text']) && trim($product['titleIcons'][0]['text'])!='')?trim($product['titleIcons'][0]['text']):'go to shop',
+                                'store_url'=>'#',
+                            );
 
-                    //merege data
-                    $this->allProducts[]= $data;
+                        $data['site'] = 'ezbuy';
+
+                        //merege data
+                        $this->allProducts[]= $data;
+
+                    }//end checkCompareProduct
+
                 }
             }//end loop all products
         }//end check isset products
@@ -222,28 +228,32 @@ class HomeController extends Controller {
 
                     if (isset($product['name']) && trim($product['name']) != '') {
 
-                        if ($product['price_before_discount'] != 0) {
-                            $price = $product['price_before_discount'];
-                            $sale_price = $product['price'];
-                        } else {
-                            $price = $product['price'];
-                            $sale_price = $product['price_before_discount'];
-                        }
+                        if($this->checkCompareProduct($product['name'], $keywork))
+                        {
 
-                        $data = array(
-                            'product_name' => $product['name'],
-                            'product_url' => "https://shopee.sg/product/" . $product['shopid'] . "/" . $product['itemid'] . "/",
-                            'image' => (trim($product['image']) != '') ? "https://cfshopeesg-a.akamaihd.net/file/" . trim($product['image']) . "_tn" : '',
-                            'price' => $price/100000,
-                            'sale_price' => $sale_price/100000,
-                            'store_name' => 'go to shop',
-                            'store_url' => "https://shopee.sg/shop/" . $product['shopid'] . "/"
-                        );
-                        
-                        $data['site'] = 'shopee';
+                            if ($product['price_before_discount'] != 0) {
+                                $price = $product['price_before_discount'];
+                                $sale_price = $product['price'];
+                            } else {
+                                $price = $product['price'];
+                                $sale_price = $product['price_before_discount'];
+                            }
 
-                        //merege data
-                        $this->allProducts[] = $data;
+                            $data = array(
+                                'product_name' => $product['name'],
+                                'product_url' => "https://shopee.sg/product/" . $product['shopid'] . "/" . $product['itemid'] . "/",
+                                'image' => (trim($product['image']) != '') ? "https://cfshopeesg-a.akamaihd.net/file/" . trim($product['image']) . "_tn" : '',
+                                'price' => $price/100000,
+                                'sale_price' => $sale_price/100000,
+                                'store_name' => 'go to shop',
+                                'store_url' => "https://shopee.sg/shop/" . $product['shopid'] . "/"
+                            );
+                            
+                            $data['site'] = 'shopee';
+
+                            //merege data
+                            $this->allProducts[] = $data;
+                        }//end checkCompareProduct
                         $last_page = false;
                     }
                 }//end loop all producs in page
@@ -285,28 +295,32 @@ class HomeController extends Controller {
                     $tmp = $node->find('.td_item a[data-type="goods_url"]');
                     $data['product_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
                     $data['product_url'] = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
-                    //image
-                    $tmp = $node->find(".td_thmb img");
-                    $data['image'] = (isset($tmp[0])) ? trim($tmp[0]->gd_src) : '';
-                    //sale_price
-                    $tmp = $node->find(".td_prc .prc strong");
-                    $data['sale_price'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
-                    //price
-                    $tmp = $node->find(".td_prc .prc .dc_prc");
-                    $data['price'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
-                    //update price
-                    if ($data['price'] == '') {
-                        $data['price'] = $data['sale_price'];
-                        $data['sale_price'] = '';
-                    }
-                    //store_name
-                    $tmp = $node->find(".opt_dtl a.lnk_sh");
-                    $data['store_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
-                    $data['store_url'] = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
-                    $data['site'] = 'qoo10';
 
-                    //merege data
-                    $this->allProducts[] = $data;
+                    if($this->checkCompareProduct($data['product_name'], $keywork)){
+
+                        //image
+                        $tmp = $node->find(".td_thmb img");
+                        $data['image'] = (isset($tmp[0])) ? trim($tmp[0]->gd_src) : '';
+                        //sale_price
+                        $tmp = $node->find(".td_prc .prc strong");
+                        $data['sale_price'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
+                        //price
+                        $tmp = $node->find(".td_prc .prc .dc_prc");
+                        $data['price'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
+                        //update price
+                        if ($data['price'] == '') {
+                            $data['price'] = $data['sale_price'];
+                            $data['sale_price'] = '';
+                        }
+                        //store_name
+                        $tmp = $node->find(".opt_dtl a.lnk_sh");
+                        $data['store_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
+                        $data['store_url'] = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
+                        $data['site'] = 'qoo10';
+
+                        //merege data
+                        $this->allProducts[] = $data;
+                    }//end checkCompareProduct
                     $last_page = false;
                 }//end check is product item
             }//end foreach
@@ -341,28 +355,32 @@ class HomeController extends Controller {
 
                         if (isset($product['name']) && trim($product['name']) != '') {
 
-                            if (isset($product['originalPrice']) && $product['originalPrice'] != 0) {
-                                $price = $product['originalPrice'];
-                                $sale_price = $product['price'];
-                            } else {
-                                $price = $product['price'];
-                                $sale_price = 0;
-                            }
+                            if($this->checkCompareProduct($product['name'], $keywork))
+                            {
 
-                            $data = array(
-                                'product_name' => $product['name'],
-                                'product_url' => (isset($product['productUrl'])) ? trim($product['productUrl']) : '',
-                                'image' => (isset($product['image'])) ? trim($product['image']) : '',
-                                'price' => $price,
-                                'sale_price' => $sale_price,
-                                'store_name' => (isset($product['sellerName'])) ? trim($product['sellerName']) : '',
-                                'store_url' => (isset($product['sellerId'])) ? trim($product['sellerId']) : '',
-                            );
-                            
-                            $data['site'] = 'lazada';
+                                if (isset($product['originalPrice']) && $product['originalPrice'] != 0) {
+                                    $price = $product['originalPrice'];
+                                    $sale_price = $product['price'];
+                                } else {
+                                    $price = $product['price'];
+                                    $sale_price = 0;
+                                }
 
-                            //merege data
-                            $this->allProducts[] = $data;
+                                $data = array(
+                                    'product_name' => $product['name'],
+                                    'product_url' => (isset($product['productUrl'])) ? trim($product['productUrl']) : '',
+                                    'image' => (isset($product['image'])) ? trim($product['image']) : '',
+                                    'price' => $price,
+                                    'sale_price' => $sale_price,
+                                    'store_name' => (isset($product['sellerName'])) ? trim($product['sellerName']) : '',
+                                    'store_url' => (isset($product['sellerId'])) ? trim($product['sellerId']) : '',
+                                );
+                                
+                                $data['site'] = 'lazada';
+
+                                //merege data
+                                $this->allProducts[] = $data;
+                            }//end checkCompareProduct
                             $last_page = false;
                         }
                     }//end loop all producs in page
@@ -398,37 +416,43 @@ class HomeController extends Controller {
                 //product_name
                 $tmp = $node->find('#productCardTitle');
                 $data['product_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
-                //product_url
-                $tmp = $node->find('a#productCardThumbnail');
-                $tmp = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
-                $tmp = explode('?', $tmp);
-                $data['product_url'] = 'https://sg.carousell.com' . trim($tmp[0]);
-                //image
-                $tmps = $node->find("img");
-                foreach ($tmps as $tmp) {
-                    if ($tmp->{'data-layzr'} != '') {
-                        $data['image'] = trim($tmp->{'data-layzr'});
-                        break;
+
+                if($this->checkCompareProduct($data['product_name'], $keywork))
+                {
+
+                    //product_url
+                    $tmp = $node->find('a#productCardThumbnail');
+                    $tmp = (isset($tmp[0])) ? trim($tmp[0]->href) : '';
+                    $tmp = explode('?', $tmp);
+                    $data['product_url'] = 'https://sg.carousell.com' . trim($tmp[0]);
+                    //image
+                    $tmps = $node->find("img");
+                    foreach ($tmps as $tmp) {
+                        if ($tmp->{'data-layzr'} != '') {
+                            $data['image'] = trim($tmp->{'data-layzr'});
+                            break;
+                        }
                     }
-                }
-                if ($data['image'] == '') {
-                    $tmp = $node->find("img");
-                    $data['image'] = (isset($tmp[0])) ? trim($tmp[0]->src) : '';
-                }
+                    if ($data['image'] == '') {
+                        $tmp = $node->find("img");
+                        $data['image'] = (isset($tmp[0])) ? trim($tmp[0]->src) : '';
+                    }
 
-                //price
-                $tmp = $node->find("dl dd");
-                $data['price'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
-                //store_name
-                $tmp = $node->find("h3");
-                $data['store_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
-                //store_url
-                $tmp = $node->find("a.media");
-                $data['store_url'] = (isset($tmp[0])) ? 'https://sg.carousell.com' . trim($tmp[0]->href) : '';
+                    //price
+                    $tmp = $node->find("dl dd");
+                    $data['price'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
+                    //store_name
+                    $tmp = $node->find("h3");
+                    $data['store_name'] = (isset($tmp[0])) ? trim($tmp[0]->plaintext) : '';
+                    //store_url
+                    $tmp = $node->find("a.media");
+                    $data['store_url'] = (isset($tmp[0])) ? 'https://sg.carousell.com' . trim($tmp[0]->href) : '';
 
-                $data['site'] = 'carousell';
-                //merege data
-                $this->allProducts[] = $data;
+                    $data['site'] = 'carousell';
+                    //merege data
+                    $this->allProducts[] = $data;
+
+                }//end checkCompareProduct
             }//end check is product item
         }//end foreach
         // clear html_base
@@ -436,7 +460,7 @@ class HomeController extends Controller {
         unset($html_base);
     }
 
-// @getBetweenXandY
+    // @getBetweenXandY
     private function getBetweenXandY($string, $a, $b) {
         $result = false;
         if (strrpos($string, $a) !== false) {
@@ -447,6 +471,18 @@ class HomeController extends Controller {
             }
         }
         return $result;
+    }
+
+    private function checkCompareProduct($product_name, $keywork){
+
+        $product_name = str_replace(array('_','-'), ' ', strtolower($product_name));
+        $keywork = trim(str_replace(array('_','-'), ' ', strtolower($keywork)));
+        if(strrpos($product_name, $keywork)!==false){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
     private function curl_getcontent($url, $json = false, $referer = false, $count = 0) {

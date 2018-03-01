@@ -29,7 +29,7 @@
                     </nav>
 		</div>
 				   
-		<div class="container">
+		<div class="container" style="min-height: 400px;">
                     @yield('content')
 		</div>
                 
