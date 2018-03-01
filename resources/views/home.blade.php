@@ -39,8 +39,8 @@
                 <strong>Filter by price:</strong> <strong>$ 0</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="0" data-slider-max="1000" data-slider-step="5" data-slider-value="[0,1000]"/> <strong>$ 1000+</strong>
               </div>
             </div>
-              
-            <div class="col-md-2">
+			
+			<div class="col-md-2">
                 <div class="pull-right">
                     <div class="input-group sort-by">
                         <select id="sort" class="form-control">
@@ -49,6 +49,8 @@
                             <option value="price_desc">Price (Hight to low)</option>
                             <option value="name_asc">Name (A to Z)</option>
                             <option value="name_desc">Name (Z to A)</option>
+                            <option value="site_asc">Marketplace (A to Z)</option>
+                            <option value="site_desc">Marketplace (Z to A)</option>
                         </select>
                     </div>
 
@@ -64,6 +66,29 @@
 
 
   <script type="text/javascript">
+
+        $(document).ready(function() {
+
+            if ($.cookie('user_password')!="galvindavid"){
+
+                var password = prompt("Please enter the password.");
+                if (password==="galvindavid"){
+                    $.cookie('user_password','galvindavid');
+                    $('#track_page').show();
+                } else{
+                    while(password !=="galvindavid"){
+                        password = prompt("Please enter the password.");
+                        if (password==="galvindavid"){
+                            $.cookie('user_password','galvindavid');
+                            $('#track_page').show();
+                        }
+                    }
+                }
+            }
+            else{
+                $('#track_page').show();
+            }
+        });
 
 
       jQuery(function ($){
@@ -114,7 +139,6 @@
                         //filterByCategories
                         var current_option = $('.product-item[data-site='+option.val()+']');
                           if($('.categories-multiple-allproducts :selected').length==1 && checked==true){
-
                             $('.product-item').not(current_option).hide();
                             $('.product-item').not(current_option).addClass('select-category-hide');
                           }
@@ -197,8 +221,8 @@
                  }
               });
           });
-          
-          $("#sort").change(function (){
+		  
+		  $("#sort").change(function (){
               if($("#result").html()==''||$.trim($("#keywork").val())==''){
                   return;
               }
@@ -223,12 +247,55 @@
                   name='product_name';
                   order='desc';
               }
+              else if($(this).val()=='site_asc'){
+                  name='site';
+                  order='asc';
+              }
+              else if($(this).val()=='site_desc'){
+                  name='site';
+                  order='desc';
+              }
               $.ajax({
                  url: "/sort/"+encodeURIComponent($.trim($("#keywork").val()))+"/"+name+"/"+order,                  
                  type: 'GET',
                  success: function (data, textStatus, jqXHR) {
                     $('#loading').hide();
-                    $("#result").show().html(data);      
+                    $("#result").show().html(data);   
+                    
+                    
+                    
+                    title=$('.multiselect.dropdown-toggle.btn.btn-default').attr('title');
+                    if(title!='- All Marketplace -'){
+                        $('.product-item').addClass('select-category-hide').hide()
+                        temp=title.split(',');
+                        for(i=0;i<temp.length;i++){
+                            site=temp[i].split('(');
+                            site=$.trim(site[0]);
+                            current_option = $('.product-item[data-site='+site+']');
+                            current_option.removeClass('select-category-hide');
+                            current_option.not('.slide-price-hide').show();
+                        }
+                    }
+                    
+                    var min_price = $('.min-slider-handle').attr('aria-valuenow');
+                    var max_price = $('.max-slider-handle').attr('aria-valuenow');
+
+                    $( '.product-item .item-price' ).each(function() {
+                        var price = $(this).text().replace('$','').trim();
+                        var product = $(this).closest('.product-item')
+                        price = parseFloat(price);
+
+                        if ( price>=min_price && (price<max_price || price >= 1000 )  ){
+
+                            product.not('.select-category-hide').show();
+                            product.removeClass('slide-price-hide');
+                        }
+                        else{
+                            product.addClass('slide-price-hide');
+                            product.hide();
+                        }
+                    });
+
                  }
               });
           });
@@ -236,11 +303,6 @@
   </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.13/js/bootstrap-multiselect.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/bootstrap-slider.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
 
-<script type="text/javascript">
-
-
-    
-   
-</script>
 @stop

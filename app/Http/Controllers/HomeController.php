@@ -64,7 +64,9 @@ class HomeController extends Controller {
                         }
                     }
 
-                    $this->allProducts[] = $data;
+                    if ($data['site'] != 'carousell' || $data['price'] != 0) {
+                        $this->allProducts[] = $data;
+                    }
                 }
             }
         }
@@ -74,8 +76,8 @@ class HomeController extends Controller {
             'keywork' => $keywork
         ]);
     }
-    
-    public function sort($keywork,$name,$order) {
+	
+	public function sort($keywork,$name,$order) {
         
         @set_time_limit(0);
         @ini_set('max_execution_time', 0);
@@ -96,6 +98,9 @@ class HomeController extends Controller {
                     $orderBy='';
                 }
                 else{
+                    if ($name == 'price') {
+                        $name = 'CAST(price as DECIMAL(11,2))';
+                    }
                     $orderBy = 'order by '. $name . ' ' . $order;
                 }
                 $sql = "select * from product where created_at='$created_at' and keyword like '$keywork' $orderBy";
@@ -116,7 +121,9 @@ class HomeController extends Controller {
                         }
                     }
 
-                    $this->allProducts[] = $data;
+                    if ($data['site'] != 'carousell' || $data['price'] != 0) {
+                        $this->allProducts[] = $data;
+                    }
                 }
             }
         }
@@ -502,7 +509,10 @@ class HomeController extends Controller {
 
                     $data['site'] = 'carousell';
                     //merege data
-                    $this->allProducts[] = $data;
+                    if($data['price']!=0 && $data['price']!='$0'){
+                        $this->allProducts[] = $data;
+                    }
+                    
 
                 }//end checkCompareProduct
             }//end check is product item
@@ -526,15 +536,23 @@ class HomeController extends Controller {
     }
 
     private function checkCompareProduct($product_name, $keywork){
-
+        
+        $result = true;
         $product_name = str_replace(array('_','-'), ' ', strtolower($product_name));
         $keywork = trim(str_replace(array('_','-'), ' ', strtolower($keywork)));
-        if(strrpos($product_name, $keywork)!==false){
-            return true;
+
+        $keyworks = explode(' ', $keywork);
+        $keyworks = array_filter($keyworks);
+
+        foreach ($keyworks as $tmp_keywork) {
+            if(strrpos($product_name, $tmp_keywork)===false){
+                $result = false;
+                break;
+            }
         }
-        else{
-            return false;
-        }
+        
+        //return
+        return $result;
     }
 
     private function curl_getcontent($url, $json = false, $referer = false, $count = 0) {
