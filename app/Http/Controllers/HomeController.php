@@ -19,7 +19,7 @@ class HomeController extends Controller {
      */
     public function __construct() {
         $this->mysqli = new \mysqli('localhost', 'root', '', 'engine_search');
-        $this->mysqli->query('SET NAMES utf8;');
+        $this->mysqli->query('SET NAMES utf8mb4;');
     }
 
     public function search(Request $request) {
@@ -29,20 +29,26 @@ class HomeController extends Controller {
         require_once 'simple_html_dom.php';
 
         $result = [];
+        $keywork = '';
 
         if ($keywork = $request->post('keywork')) {
-
-            $sql="select *,date(created_at) as date from product where keyword like '".str_replace("'", "\'", $keywork)."'";
-            $result=$this->mysqli->query($sql);
-            $deleted=false;
-            if($result->num_rows>0){
+            $this->insert($keywork);
+            return view('result', [
+                'result' => $this->allProducts,
+            ]);
+        } else {
+            $sql = "select created_at,keyword from product order by id desc LIMIT 1";
+            $result = $this->mysqli->query($sql);
+            
+            if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    if ($row['date'] != date('Y-m-d')) {
-                        $sql = "delete from product where keyword like '" . str_replace("'", "\'", $keywork) . "'";
-                        $this->mysqli->query($sql);
-                        $deleted=true;
-                        break;
-                    }
+                    $created_at = $row['created_at'];
+                    $keywork = $row['keyword'];
+                    break;
+                }
+                $sql = "select * from product where created_at='$created_at'";
+                $result = $this->mysqli->query($sql);
+                while ($row = $result->fetch_assoc()) {
                     $data = $row;
                     if (ceil($data['price']) == floor($data['price'])) {
                         $data['price'] = '$' . number_format(intval($data['price']), 0, ".", ",");
@@ -60,22 +66,12 @@ class HomeController extends Controller {
 
                     $this->allProducts[] = $data;
                 }
-                if($deleted){
-                    $this->insert($keywork);
-                }
             }
-            else{
-                $this->insert($keywork);
-            }
-            
-            
-            return view('result', [
-                'result' => $this->allProducts,
-            ]);
         }
 
         return view('home', [
             'result' => $this->allProducts,
+            'keywork' => $keywork
         ]);
     }
     
@@ -138,14 +134,15 @@ class HomeController extends Controller {
             if($sale_price==''){
                 $sale_price='NULL';
             }
-            $sql .= "('" . str_replace("'", "\'", $data['product_name']) . "','" .
-                    str_replace("'", "\'", $data['product_url']) . "','" .
-                    $data['image'] .
-                    "',$price,$sale_price,'" . str_replace("'", "\'", $data['store_name']) . "','" .
-                    str_replace("'", "\'", $data['store_name']) .
-                    "','$','".str_replace("'", "\'", $keywork)."','".date('Y-m-d')."','".$data['site']."'),";
+            $sql .= "('" . $this->mysqli->real_escape_string($data['product_name']) . "','" .
+                    $this->mysqli->real_escape_string($data['product_url']) . "','" .
+                    $this->mysqli->real_escape_string($data['image']) .
+                    "',$price,$sale_price,'" . $this->mysqli->real_escape_string($data['store_name']) . "','" .
+                    $this->mysqli->real_escape_string($data['store_name']) .
+                    "','$','".$this->mysqli->real_escape_string($keywork)."','".date('Y-m-d H:i:s')."','".$data['site']."'),";
         }
         $sql = rtrim($sql, ',');
+        
         $this->mysqli->query($sql);
     }
 
