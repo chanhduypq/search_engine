@@ -126,20 +126,21 @@ class HomeController extends Controller {
         }
 
         $sql = 'INSERT INTO product (product_name,product_url,image,price,sale_price,store_name,store_url,currency,keyword,created_at,site) VALUES ';
-        foreach ($this->allProducts as $data) {
-            $price = str_replace(",", "", $data['price']);
+        $datas = $this->allProducts;
+        for ($i = 0; $i < count($datas); $i++) {
+            $price = str_replace(",", "", $datas[$i]['price']);
             $price = str_replace("$", "", $price);
-            $sale_price = str_replace(",", "", $data['sale_price']);
+            $sale_price = str_replace(",", "", $datas[$i]['sale_price']);
             $sale_price = str_replace("$", "", $sale_price);
             if($sale_price==''){
                 $sale_price='NULL';
             }
-            $sql .= "('" . $this->mysqli->real_escape_string($data['product_name']) . "','" .
-                    $this->mysqli->real_escape_string($data['product_url']) . "','" .
-                    $this->mysqli->real_escape_string($data['image']) .
-                    "',$price,$sale_price,'" . $this->mysqli->real_escape_string($data['store_name']) . "','" .
-                    $this->mysqli->real_escape_string($data['store_name']) .
-                    "','$','".$this->mysqli->real_escape_string($keywork)."','".date('Y-m-d H:i:s')."','".$data['site']."'),";
+            $sql .= "('" . $this->mysqli->real_escape_string($datas[$i]['product_name']) . "','" .
+                    $this->mysqli->real_escape_string($datas[$i]['product_url']) . "','" .
+                    $this->mysqli->real_escape_string($datas[$i]['image']) .
+                    "',$price,$sale_price,'" . $this->mysqli->real_escape_string($datas[$i]['store_name']) . "','" .
+                    $this->mysqli->real_escape_string($datas[$i]['store_name']) .
+                    "','$','".$this->mysqli->real_escape_string($keywork)."','".date('Y-m-d H:i:s')."','".$datas[$i]['site']."'),";
         }
         $sql = rtrim($sql, ',');
         $this->mysqli->query($sql);
