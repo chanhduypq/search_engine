@@ -1,7 +1,7 @@
 <?php if (isset($result) && count($result) > 0): ?>
     <?php foreach ($result as $item): ?>
     <!-- item -->
-        <div class="item  col-xs-3 col-lg-3">
+        <div class="item  col-xs-3 col-lg-3 product-item" data-site="{{ $item['site'] }}">
             <div class="thumbnail">
                 <div class="main-image">
                     <a href="{{ $item['product_url'] }}" target="_blanks"><img class="group list-group-image" src="{{ str_replace('g_100-w-st_', 'g_200-w-st_', $item['image']) }}" alt="" /></a>
@@ -12,11 +12,11 @@
                         <a class="title" title="{{ $item['product_name'] }}" href="{{ $item['product_url'] }}" target="_blank">{{ $item['product_name'] }}</a></p>
                     <div class="row price">
                         <div class="col-xs-12">
-                            <?php if( $item['sale_price']!=''): ?>
-                                <span class="sale-price">{{ $item['sale_price'] }}</span>
+                            <?php if( $item['sale_price']!='' && $item['sale_price']!='$0'): ?>
+                                <span class="sale-price item-price">{{ $item['sale_price'] }}</span>
                                 <span class="origin-price">{{ $item['price'] }}</span>
                             <?php else: ?>
-                                <span class="current-price">{{ $item['price'] }}</span>
+                                <span class="current-price item-price">{{ $item['price'] }}</span>
                             <?php endif; ?>
                         </div>
                     </div>

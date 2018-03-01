@@ -23,86 +23,107 @@
             
             <div class="col-md-6">
               <div class="input-group categories-fillter">
-                <strong>Filter by categories: </strong>
+                <strong>Filter by marketplaces: </strong>
                 <select class="form-control categories categories-multiple-allproducts" style="visibility: hidden;"  name="categories[]" multiple="multiple">
-                  <option value="1">Lazada (22 products)</option>
-                  <option value="3">Shoppe (15 products)</option>
-                  <option value="4">ezbuy (9 products)</option>
-                  <option value="6">qoo10 (7 products)</option>
-                  <option value="7">carousell (17 products)</option>
+                  <option value="qoo10">qoo10</option>
+                  <option value="shopee">Shoppe</option>
+                  <option value="lazada">Lazada</option>
+                  <option value="carousell">carousell</option>
+                  <option value="ezbuy">ezbuy</option>
                 </select>
               </div>
             </div>
 
             <div class="col-md-6">
               <div class="price-fillter pull-right">
-                <strong>Filter by price:</strong> <strong>$ 10</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="10" data-slider-max="1000" data-slider-step="5" data-slider-value="[250,450]"/> <strong>$ 1000</strong>
+                <strong>Filter by price:</strong> <strong>$ 0</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="0" data-slider-max="1000" data-slider-step="5" data-slider-value="[0,1000]"/> <strong>$ 1000+</strong>
               </div>
             </div>
 
           </div>
         </div>
         <div id="result" class="list-group row" style="display: <?php if (isset($result) && count($result) > 0) echo 'block'; else echo 'none'; ?>;">
-            <!--<h1>Result</h1>-->
-            <?php if (isset($result) && count($result) > 0): ?>
-                <?php foreach ($result as $item): ?>
-                <!-- item -->
-                    <div class="item  col-xs-3 col-lg-3">
-                        <div class="thumbnail">
-                            <div class="main-image">
-                                <a href="{{ $item['product_url'] }}" target="_blanks"><img class="group list-group-image" src="{{ str_replace('g_100-w-st_', 'g_200-w-st_', $item['image']) }}" alt="" /></a>
-                            </div>
-                            <div class="caption">
-                                <h4 class="group inner list-group-item-heading"><a href="#" target="_blanks">{{ $item['site'] }}</a></h4>
-                                 <p class="group inner list-group-item-text">
-                                    <a class="title" title="{{ $item['product_name'] }}" href="{{ $item['product_url'] }}" target="_blank">{{ $item['product_name'] }}</a></p>
-                                <div class="row price">
-                                    <div class="col-xs-12">
-                                        <?php if( $item['sale_price']!=''): ?>
-                                            <span class="sale-price">{{ $item['sale_price'] }}</span>
-                                            <span class="origin-price">{{ $item['price'] }}</span>
-                                        <?php else: ?>
-                                            <span class="current-price">{{ $item['price'] }}</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="row store">
-                                    <div class="col-xs-12">
-                                        <?php if(strpos($item['product_url'], 'lazada.sg')!==false): ?>
-                                             <span class="pull-right"><a href="javascript:void(0);" class="lazada-store" data-url="{{ $item['product_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
-                                        <?php elseif(strpos($item['product_url'], 'ezbuy.sg')!==false): ?>
-                                            <span class="pull-right"><a href="javascript:void(0);" class="ezbuy-store" data-url="{{ $item['product_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
-                                        <?php else: ?>
-                                            <span class="pull-right"><a href="{{ $item['store_url'] }}" target="_blank">{{ $item['store_name'] }}</a></span>
-                                        <?php endif; ?>
-                                        <div class="lds-ring" style="display: none;"><div></div><div></div><div></div><div></div></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <!-- end item -->
-                <?php  endforeach;  ?>
-            <?php 
-            endif;
-            ?>
-
-
+            @include('result')
         </div>
     </form>
 
 
   <script type="text/javascript">
+
+
       jQuery(function ($){
 
+            $( '.categories-multiple-allproducts option' ).each(function() {
+               var count_cat = $('.product-item[data-site='+$(this).val()+']').length;
+               if(count_cat<=1){
+                    $(this).html($(this).val()+' ('+count_cat+' product)');
+               }
+               else{
+                    $(this).html($(this).val()+' ('+count_cat+' products)');
+               }
+            });
+
+
+            //filter by slider
             var slider = new Slider('#ex2', {});
+            $('#ex2').change(function(){
+
+                var min_price = $('.min-slider-handle').attr('aria-valuenow');
+                var max_price = $('.max-slider-handle').attr('aria-valuenow');
+
+                $( '.product-item .item-price' ).each(function() {
+                    var price = $(this).text().replace('$','').trim();
+                    var product = $(this).closest('.product-item')
+                    price = parseFloat(price);
+
+                    if ( price>min_price && (price<max_price || price >= 1000 )  ){
+                       
+                        product.not('.select-category-hide').show();
+                        product.removeClass('slide-price-hide');
+                    }
+                    else{
+                        product.addClass('slide-price-hide');
+                        product.hide();
+                    }
+                });
+
+            });
+
 
             $('.categories-multiple-allproducts').multiselect(
                 {
-                    nonSelectedText: '- All Category -',
-                    buttonWidth: '200px'
+                    nonSelectedText: '- All Marketplace -',
+                    buttonWidth: '200px',
+                    onChange: function(option, checked) {
+
+                        //filterByCategories
+                        var current_option = $('.product-item[data-site='+option.val()+']');
+                          if($('.categories-multiple-allproducts :selected').length==1 && checked==true){
+
+                            $('.product-item').not(current_option).hide();
+                            $('.product-item').not(current_option).addClass('select-category-hide');
+                          }
+                          else if($('.categories-multiple-allproducts :selected').length==0){
+                            $('.product-item').not('.slide-price-hide').show();
+                            $('.product-item').not('.slide-price-hide').removeClass('select-category-hide');
+                          }
+                          else{
+                              if(checked==true){
+                                current_option.removeClass('select-category-hide');
+                                current_option.not('.slide-price-hide').show();
+                              }
+                              else{
+                                current_option.addClass('select-category-hide');
+                                current_option.hide();
+                              }
+                          }
+                    }
                 }
             );
+
+
+
+
 
           $("#frm").submit(function (e){
               e.preventDefault();
@@ -165,4 +186,11 @@
   </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.13/js/bootstrap-multiselect.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/bootstrap-slider.min.js"></script>
+
+<script type="text/javascript">
+
+
+    
+   
+</script>
 @stop
