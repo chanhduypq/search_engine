@@ -75,6 +75,57 @@ class HomeController extends Controller {
         ]);
     }
     
+    public function sort($keywork,$name,$order) {
+        
+        @set_time_limit(0);
+        @ini_set('max_execution_time', 0);
+
+        if ($keywork) {
+            $keywork= urldecode($keywork);
+            
+            $sql = "select created_at from product where keyword like '$keywork' order by id desc LIMIT 1";
+           
+            $result = $this->mysqli->query($sql);
+            
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $created_at = $row['created_at'];
+                    break;
+                }
+                if($name=='default'){
+                    $orderBy='';
+                }
+                else{
+                    $orderBy = 'order by '. $name . ' ' . $order;
+                }
+                $sql = "select * from product where created_at='$created_at' and keyword like '$keywork' $orderBy";
+                $result = $this->mysqli->query($sql);
+                while ($row = $result->fetch_assoc()) {
+                    $data = $row;
+                    if (ceil($data['price']) == floor($data['price'])) {
+                        $data['price'] = '$' . number_format(intval($data['price']), 0, ".", ",");
+                    } else {
+                        $data['price'] = '$' . number_format($data['price'], 2, ".", ",");
+                    }
+
+                    if ($data['sale_price'] != '') {
+                        if (ceil($data['sale_price']) == floor($data['sale_price'])) {
+                            $data['sale_price'] = '$' . number_format(intval($data['sale_price']), 0, ".", ",");
+                        } else {
+                            $data['sale_price'] = '$' . number_format($data['sale_price'], 2, ".", ",");
+                        }
+                    }
+
+                    $this->allProducts[] = $data;
+                }
+            }
+        }
+
+        return view('result', [
+            'result' => $this->allProducts,
+        ]);
+    }
+    
     
 
     public function getStoreUrl(Request $request){

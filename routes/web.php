@@ -21,6 +21,12 @@ $router->post('/', [
 	'uses' => 'HomeController@search',
 ]);
 
+$router->get('/sort/{keywork}/{name}/{order}', [
+	'as' => 'sort',
+	'uses' => 'HomeController@sort',
+]);
+
+
 $router->post('/getstoreurl', [
 	'as' => 'getstoreurl',
 	'uses' => 'HomeController@getStoreUrl',

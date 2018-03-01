@@ -21,7 +21,7 @@
         <div class="fillter-products">
           <div class="row">
             
-            <div class="col-md-6">
+            <div class="col-md-5">
               <div class="input-group categories-fillter">
                 <strong>Filter by marketplaces: </strong>
                 <select class="form-control categories categories-multiple-allproducts" style="visibility: hidden;"  name="categories[]" multiple="multiple">
@@ -34,10 +34,25 @@
               </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-5">
               <div class="price-fillter pull-right">
                 <strong>Filter by price:</strong> <strong>$ 0</strong> <input id="ex2" type="text" style="visibility: hidden;" class="span2" value="" data-slider-min="0" data-slider-max="1000" data-slider-step="5" data-slider-value="[0,1000]"/> <strong>$ 1000+</strong>
               </div>
+            </div>
+              
+            <div class="col-md-2">
+                <div class="pull-right">
+                    <div class="input-group sort-by">
+                        <select id="sort" class="form-control">
+                            <option value="default">Sort by: (default)</option>
+                            <option value="price_asc">Price (Low to hight)</option>
+                            <option value="price_desc">Price (Hight to low)</option>
+                            <option value="name_asc">Name (A to Z)</option>
+                            <option value="name_desc">Name (Z to A)</option>
+                        </select>
+                    </div>
+
+                </div>
             </div>
 
           </div>
@@ -179,6 +194,41 @@
                     if(textStatus=='success' && data!=''){
                        window.open(data,'_blank'); 
                     }
+                 }
+              });
+          });
+          
+          $("#sort").change(function (){
+              if($("#result").html()==''||$.trim($("#keywork").val())==''){
+                  return;
+              }
+              $('#loading').show();
+              if($(this).val()=='default'){
+                  name='default';
+                  order='asc';
+              }
+              else if($(this).val()=='price_asc'){
+                  name='price';
+                  order='asc';
+              }
+              else if($(this).val()=='price_desc'){
+                  name='price';
+                  order='desc';
+              }
+              else if($(this).val()=='name_asc'){
+                  name='product_name';
+                  order='asc';
+              }
+              else if($(this).val()=='name_desc'){
+                  name='product_name';
+                  order='desc';
+              }
+              $.ajax({
+                 url: "/sort/"+encodeURIComponent($.trim($("#keywork").val()))+"/"+name+"/"+order,                  
+                 type: 'GET',
+                 success: function (data, textStatus, jqXHR) {
+                    $('#loading').hide();
+                    $("#result").show().html(data);      
                  }
               });
           });
